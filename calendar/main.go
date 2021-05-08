@@ -1,15 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
 )
 
+type Response struct {
+	Version string `json:"version"`
+}
+
 func main() {
 	log.Print("calendar service ready")
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "calendar service response")
+		w.Header().Add("Content-Type", "application/json")
+
+		response := &Response{
+			Version: "1",
+		}
+
+		json.NewEncoder(w).Encode(response)
 	})
+
 	http.ListenAndServe(":50051", nil)
 }
