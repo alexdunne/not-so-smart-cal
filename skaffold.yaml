@@ -1,0 +1,18 @@
+apiVersion: skaffold/v2beta15
+kind: Config
+metadata:
+  name: not-so-smart-cal
+build:
+  artifacts:
+    - image: calendar
+      context: calendar
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+      - calendar/deployment.yaml
+portForward:
+  - resourceType: service
+    resourceName: calendar
+    port: 50051
