@@ -36,3 +36,7 @@ portForward:
   - resourceType: service
     resourceName: graphql
     port: 4000
+  - resourceType: service
+    resourceName: calendar-postgres
+    port: 5432
+    localPort: 54321

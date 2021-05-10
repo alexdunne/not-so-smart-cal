@@ -17,6 +17,22 @@ spec:
       containers:
         - name: calendar
           image: calendar
+          env:
+            - name: POSTGRES_HOST
+              value: "calendar-postgres"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: calendar-postgres-credentials
+                  key: user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calendar-postgres-credentials
+                  key: password
+          envFrom:
+            - configMapRef:
+                name: calendar-postgres-configuration
 ---
 apiVersion: v1
 kind: Service
