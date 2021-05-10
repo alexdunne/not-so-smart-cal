@@ -1,12 +1,13 @@
 FROM golang:1.16-alpine as builder
-ENV GO111MODULE=on
-WORKDIR /code/
-COPY main.go .
-COPY go.mod .
 # `skaffold debug` sets SKAFFOLD_GO_GCFLAGS to disable compiler optimizations
 ARG SKAFFOLD_GO_GCFLAGS
-RUN go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /app .
-
+ENV GO111MODULE=on
+WORKDIR /code/
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+COPY . .
+RUN go build -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o /app ./cmd/api
 
 FROM alpine:3.10
 CMD ["./app"]
