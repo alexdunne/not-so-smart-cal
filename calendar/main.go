@@ -17,11 +17,11 @@ func main() {
 		w.Header().Add("Content-Type", "application/json")
 
 		response := &Response{
-			Version: "1",
+			Version: "2",
 		}
 
 		json.NewEncoder(w).Encode(response)
 	})
 
-	http.ListenAndServe(":50051", nil)
+	http.ListenAndServe(":5000", nil)
 }

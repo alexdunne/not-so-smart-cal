@@ -1,0 +1,22 @@
+{
+  "name": "graphql",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node-dev --poll src/index.ts"
+  },
+  "author": "Alex Dunne",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.24.0",
+    "axios": "^0.21.1",
+    "graphql": "^15.5.0",
+    "nexus": "^1.0.0",
+    "ts-node-dev": "^1.1.6",
+    "typescript": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^15.0.2"
+  }
+}

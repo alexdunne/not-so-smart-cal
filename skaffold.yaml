@@ -16,14 +16,23 @@ build:
         manual:
           - src: "**/*.ts"
             dest: .
+    - image: graphql
+      context: graphql
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "**/*.ts"
+            dest: .
 deploy:
   kubectl:
     manifests:
+      - ./infra/k8s-dev/*
       - ./infra/k8s/*
 portForward:
   - resourceType: service
-    resourceName: calendar
-    port: 50051
-  - resourceType: service
     resourceName: frontend
     port: 3000
+  - resourceType: service
+    resourceName: graphql
+    port: 4000

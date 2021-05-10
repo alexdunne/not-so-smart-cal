@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  labels:
-    app: frontend
 spec:
+  selector:
+    app: frontend
   ports:
     - port: 3000
       protocol: TCP
+      name: frontend
   type: LoadBalancer
-  selector:
-    app: frontend
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,3 +31,5 @@ spec:
       containers:
         - name: frontend
           image: frontend
+          ports:
+            - containerPort: 3000
