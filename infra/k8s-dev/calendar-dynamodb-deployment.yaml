@@ -27,4 +27,3 @@ spec:
     app: calendar-dynamodb
   ports:
     - port: 8000
-      targetPort: 8000
