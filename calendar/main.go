@@ -17,7 +17,7 @@ func main() {
 		w.Header().Add("Content-Type", "application/json")
 
 		response := &Response{
-			Version: "3",
+			Version: "5",
 		}
 
 		json.NewEncoder(w).Encode(response)

@@ -20,6 +20,8 @@ spec:
           env:
             - name: PORT
               value: "4000"
+            - name: CALENDAR_SERVICE
+              value: "http://calendar"
 ---
 apiVersion: v1
 kind: Service

@@ -20,7 +20,7 @@ export const DiagnosticsType = objectType({
 export const DiagnosticsQuery = queryField('diagnostics', {
   type: DiagnosticsType,
   async resolve() {
-    const response = await axios.get(`${process.env.CALENDAR_PORT as any}/graphql`);
+    const response = await axios.get(`${process.env.CALENDAR_SERVICE}`);
 
     return {
       calendar: response.data
