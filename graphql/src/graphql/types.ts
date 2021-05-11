@@ -1,5 +1,8 @@
 import axios from "axios";
-import { objectType, queryField } from "nexus";
+import { objectType, queryField, asNexusMethod } from "nexus";
+import {  DateTimeResolver } from 'graphql-scalars';
+
+export const DateTime = DateTimeResolver
 
 export const CalendarServiceDiagnosticsType = objectType({
   name: 'CalendarServiceDiagnostics',
@@ -27,3 +30,20 @@ export const DiagnosticsQuery = queryField('diagnostics', {
     }
   },
 })
+
+export const EventType = objectType({
+  name: "Event",
+  definition(t) {
+    t.string('id')
+    t.string('title')
+    t.string('location')
+    t.field('startsAt', {
+      type: 'DateTime'
+    })
+    t.field('endsAt', {
+      type: 'DateTime'
+    })
+  }
+})
+
+export * from "./CreateEventMutation"

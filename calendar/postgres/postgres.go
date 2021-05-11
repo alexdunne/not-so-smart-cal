@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -18,12 +19,17 @@ type DB struct {
 
 	// Datasource name.
 	connStr string
+
+	// Now returns the current time.
+	// Used to ensure a consistent time value for multiple inserts/updates in a single transaction
+	now func() time.Time
 }
 
 // NewDB returns a new instance of DB associated with the given datasource name.
 func NewDB(connStr string) *DB {
 	db := &DB{
 		connStr: connStr,
+		now:     time.Now,
 	}
 
 	return db
@@ -105,4 +111,23 @@ func (db *DB) Close(ctx context.Context) error {
 		return db.db.Close(ctx)
 	}
 	return nil
+}
+
+type Tx struct {
+	pgx.Tx
+	db  *DB
+	now time.Time
+}
+
+func (db *DB) BeginTx(ctx context.Context) (*Tx, error) {
+	tx, err := db.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tx{
+		Tx:  tx,
+		db:  db,
+		now: db.now().UTC().Truncate(time.Second),
+	}, nil
 }
