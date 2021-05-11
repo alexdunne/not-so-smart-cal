@@ -1,0 +1,24 @@
+# https://github.com/kubernetes/minikube/issues/8439#issuecomment-799801736
+apiVersion: v1
+kind: Service
+metadata:
+  name: minikube-host
+  namespace: default
+  labels:
+    app: minikube-host
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: minikube-host
+subsets:
+  - addresses:
+      - ip: 192.168.65.2
+    ports:
+      - port: 5432
+        name: postgres

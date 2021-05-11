@@ -19,7 +19,7 @@ spec:
           image: calendar
           env:
             - name: POSTGRES_HOST
-              value: "calendar-postgres"
+              value: minikube-host
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
