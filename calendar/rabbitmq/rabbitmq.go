@@ -22,9 +22,9 @@ func NewProducer(connStr string) *Producer {
 }
 
 func (p *Producer) Open() (err error) {
-	// Ensure a DSN is set before attempting to connect.
+	// ensure a DSN is set before attempting to connect.
 	if p.connStr == "" {
-		return fmt.Errorf("db connection string required")
+		return fmt.Errorf("connection string required")
 	}
 
 	if p.conn, err = amqp.Dial(p.connStr); err != nil {

@@ -20,33 +20,43 @@ spec:
           env:
             - name: POSTGRES_HOST
               value: minikube-host
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: DATABASE_DB
+            - name: POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: DATABASE_PORT
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: calendar-postgres-credentials
-                  key: user
+                  name: credentials
+                  key: DATABASE_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: calendar-postgres-credentials
-                  key: password
+                  name: credentials
+                  key: DATABASE_PASSWORD
             - name: AMQP_HOST
               value: minikube-host
             - name: AMQP_USER
               valueFrom:
                 secretKeyRef:
-                  name: rabbitmq-credentials
-                  key: user
+                  name: credentials
+                  key: RABBITMQ_USER
             - name: AMQP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: rabbitmq-credentials
-                  key: password
-          envFrom:
-            - configMapRef:
-                name: calendar-postgres-configuration
-            - configMapRef:
-                name: rabbitmq-configuration
+                  name: credentials
+                  key: RABBITMQ_PASSWORD
+            - name: AMQP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: RABBITMQ_PORT
 ---
 apiVersion: v1
 kind: Service

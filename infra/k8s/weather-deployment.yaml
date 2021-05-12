@@ -23,13 +23,20 @@ spec:
             - name: AMQP_USER
               valueFrom:
                 secretKeyRef:
-                  name: rabbitmq-credentials
-                  key: user
+                  name: credentials
+                  key: RABBITMQ_USER
             - name: AMQP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: rabbitmq-credentials
-                  key: password
-          envFrom:
-            - configMapRef:
-                name: rabbitmq-configuration
+                  name: credentials
+                  key: RABBITMQ_PASSWORD
+            - name: AMQP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: RABBITMQ_PORT
+            - name: OPEN_WEATHER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: OPEN_WEATHER_API_KEY
