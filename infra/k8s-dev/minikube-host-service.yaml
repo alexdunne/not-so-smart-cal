@@ -11,6 +11,8 @@ spec:
   ports:
     - name: postgres
       port: 5432
+    - name: rabbitmq
+      port: 5672
 ---
 kind: Endpoints
 apiVersion: v1
@@ -22,3 +24,5 @@ subsets:
     ports:
       - port: 5432
         name: postgres
+      - port: 5672
+        name: rabbitmq

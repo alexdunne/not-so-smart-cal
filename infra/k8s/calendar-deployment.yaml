@@ -30,9 +30,23 @@ spec:
                 secretKeyRef:
                   name: calendar-postgres-credentials
                   key: password
+            - name: AMQP_HOST
+              value: minikube-host
+            - name: AMQP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: user
+            - name: AMQP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
           envFrom:
             - configMapRef:
                 name: calendar-postgres-configuration
+            - configMapRef:
+                name: rabbitmq-configuration
 ---
 apiVersion: v1
 kind: Service

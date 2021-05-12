@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/alexdunne/not-so-smart-cal/calendar/model"
+	"github.com/alexdunne/not-so-smart-cal/calendar/rabbitmq"
 	"github.com/go-playground/validator/v10"
 )
 
 type EventService struct {
 	DB        *DB
+	Producer  *rabbitmq.Producer
 	Validator *validator.Validate
 }
 
@@ -44,5 +46,11 @@ func (s *EventService) CreateEvent(ctx context.Context, event *model.Event) erro
 
 	event.ID = id
 
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	s.Producer.Publish("event.created", event)
+
+	return nil
 }

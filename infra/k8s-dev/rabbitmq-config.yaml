@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-configuration
+data:
+  AMQP_PORT: "5672"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+type: Opaque
+data:
+  # TODO - Move this to some secret manager or env file
+  user: cmFiYml0bXE=
+  password: cmFiYml0bXE=

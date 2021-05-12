@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexdunne/not-so-smart-cal/calendar/model"
 	"github.com/alexdunne/not-so-smart-cal/calendar/postgres"
+	"github.com/alexdunne/not-so-smart-cal/calendar/rabbitmq"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -18,7 +19,9 @@ var validate *validator.Validate
 func main() {
 	fmt.Println("calendar service booting")
 
-	connStr := fmt.Sprintf(
+	validate = validator.New()
+
+	dbConnStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PASSWORD"),
@@ -27,17 +30,31 @@ func main() {
 		os.Getenv("POSTGRES_DB"),
 	)
 
-	db := postgres.NewDB(connStr)
+	db := postgres.NewDB(dbConnStr)
 	if err := db.Open(context.Background()); err != nil {
 		fmt.Printf("cannot open db: %v\n", err)
 		os.Exit(1)
 	}
 	defer db.Close(context.Background())
 
-	validate = validator.New()
+	amqpConnStr := fmt.Sprintf(
+		"amqp://%s:%s@%s:%s",
+		os.Getenv("AMQP_USER"),
+		os.Getenv("AMQP_PASSWORD"),
+		os.Getenv("AMQP_HOST"),
+		os.Getenv("AMQP_PORT"),
+	)
+
+	producer := rabbitmq.NewProducer(amqpConnStr)
+	if err := producer.Open(); err != nil {
+		fmt.Printf("cannot open rabbitmq connection: %v\n", err)
+		os.Exit(1)
+	}
+	defer producer.Close()
 
 	eventService := &postgres.EventService{
 		DB:        db,
+		Producer:  producer,
 		Validator: validate,
 	}
 
