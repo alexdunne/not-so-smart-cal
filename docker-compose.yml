@@ -12,5 +12,18 @@ services:
     volumes:
       - db-data-volume:/var/lib/postgresql/data
 
+  rabbitmq:
+    build:
+      context: ./infra/docker/rabbitmq
+      dockerfile: ./Dockerfile
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq-data-volume:/var/lib/rabbitmq/
+      - rabbitmq-log-volume:/var/log/rabbitmq/
+
 volumes:
   db-data-volume:
+  rabbitmq-data-volume:
+  rabbitmq-log-volume:
