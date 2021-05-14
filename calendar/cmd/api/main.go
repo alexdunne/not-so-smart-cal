@@ -64,6 +64,7 @@ func main() {
 
 	r := gin.Default()
 
+	r.GET("/event/:eventId", server.findEvent)
 	r.POST("/event", server.createEvent)
 
 	r.Run()
@@ -71,6 +72,20 @@ func main() {
 
 type Server struct {
 	eventService *postgres.EventService
+}
+
+func (s *Server) findEvent(c *gin.Context) {
+	eventId := c.Param("eventId")
+
+	event, err := s.eventService.FindEventByID(c.Request.Context(), eventId)
+	if err != nil {
+		ErrorResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": gin.H{
+		"event": event,
+	}})
 }
 
 type CreateEventInput struct {

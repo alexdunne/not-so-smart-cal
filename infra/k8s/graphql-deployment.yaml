@@ -22,6 +22,8 @@ spec:
               value: "4000"
             - name: CALENDAR_SERVICE
               value: "http://calendar"
+            - name: WEATHER_SERVICE
+              value: "http://weather-api"
 ---
 apiVersion: v1
 kind: Service

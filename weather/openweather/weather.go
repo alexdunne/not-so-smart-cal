@@ -121,11 +121,13 @@ func (ws *WeatherService) fetchWeatherForLocation(
 	location *weather.GeocodedLocation,
 ) (*weather.WeatherResponse, error) {
 	url := fmt.Sprintf(
-		"https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&exclude=current,minutely,alerts&appid=%s",
+		"https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&exclude=current,minutely,alerts&units=metric&appid=%s",
 		location.Latitude,
 		location.Longitude,
 		ws.openWeatherAPIKey,
 	)
+
+	ws.logger.Debug("requesting weather information", zap.String("url", url))
 
 	resp, err := http.Get(url)
 	if err != nil {

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-api
+  labels:
+    app: weather-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-api
+  template:
+    metadata:
+      labels:
+        app: weather-api
+    spec:
+      containers:
+        - name: weather-api
+          image: weather-api
+          env:
+            - name: REDIS_HOST
+              value: minikube-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: REDIS_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-api
+  labels:
+    app: weather-api
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app: weather-api

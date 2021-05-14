@@ -14,6 +14,34 @@ type EventService struct {
 	Validator *validator.Validate
 }
 
+func (s *EventService) FindEventByID(ctx context.Context, id string) (*model.Event, error) {
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	event := &model.Event{}
+
+	err = tx.QueryRow(ctx, `
+		SELECT id, title, location, starts_at, ends_at, created_at
+		FROM events
+		WHERE id = $1
+	`, id).Scan(
+		&event.ID,
+		&event.Title,
+		&event.Location,
+		&event.StartsAt,
+		&event.EndsAt,
+		&event.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
+}
+
 func (s *EventService) CreateEvent(ctx context.Context, event *model.Event) error {
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {

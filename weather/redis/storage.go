@@ -28,6 +28,8 @@ func NewEventWeatherStorage(client *redis.Client) *EventWeatherStorage {
 func (s *EventWeatherStorage) Get(ctx context.Context, key string) (*weather.WeatherSummary, error) {
 	val, err := s.redisClient.Get(ctx, s.key(key)).Result()
 
+	fmt.Printf("%v", val)
+
 	if err == redis.Nil {
 		return nil, ErrNotFound
 	} else if err != nil {

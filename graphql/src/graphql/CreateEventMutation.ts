@@ -24,7 +24,8 @@ export const createEvent = mutationField("createEvent", {
   async resolve(_, { input }, ctx) {
     await CreateEventInputSchema.validateAsync(input);
 
-    const event = await ctx.calendarServiceClient.createEvent(input);
+    const response = await ctx.calendarServiceClient.createEvent(input);
+    const event = response.data.data.event;
 
     return {
       id: event.id,

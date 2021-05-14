@@ -24,10 +24,18 @@ build:
         manual:
           - src: "**/*.ts"
             dest: .
-    - image: weather
+    - image: weather-api
       context: weather
       docker:
         dockerfile: Dockerfile
+        buildArgs:
+          APP: api
+    - image: weather-worker
+      context: weather
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          APP: worker
 deploy:
   kubectl:
     manifests:
