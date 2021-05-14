@@ -35,6 +35,13 @@ spec:
                 secretKeyRef:
                   name: credentials
                   key: RABBITMQ_PORT
+            - name: REDIS_HOST
+              value: minikube-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: REDIS_PORT
             - name: OPEN_WEATHER_API_KEY
               valueFrom:
                 secretKeyRef:
