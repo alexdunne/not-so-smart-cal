@@ -12,12 +12,21 @@ import (
 	"github.com/alexdunne/not-so-smart-cal/calendar/rabbitmq"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/streadway/amqp"
+	"go.uber.org/zap"
 )
 
 var validate *validator.Validate
 
 func main() {
-	fmt.Println("calendar service booting")
+	logger, err := zap.NewProduction()
+	if err != nil {
+		fmt.Printf("error creating the logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logger.Sync()
+
+	logger.Info("calendar service booting")
 
 	validate = validator.New()
 
@@ -44,18 +53,32 @@ func main() {
 		os.Getenv("AMQP_HOST"),
 		os.Getenv("AMQP_PORT"),
 	)
-
-	producer := rabbitmq.NewProducer(amqpConnStr)
-	if err := producer.Open(); err != nil {
-		fmt.Printf("cannot open rabbitmq connection: %v\n", err)
+	amqpConn, err := amqp.Dial(amqpConnStr)
+	if err != nil {
+		logger.Fatal("error opening rabbitmq connection", zap.Error(err))
 		os.Exit(1)
 	}
-	defer producer.Close()
+	defer amqpConn.Close()
+	logger.Info("opened rabbitmq connection")
+
+	calendarPublisher, err := rabbitmq.NewCalendarPublisher(amqpConn, "calendar", logger)
+	if err != nil {
+		logger.Fatal("error creating event created publisher", zap.Error(err))
+		os.Exit(1)
+	}
+	defer calendarPublisher.Close()
+	logger.Info("created event created publisher")
+
+	err = calendarPublisher.Setup()
+	if err != nil {
+		logger.Fatal("error setting up calendar publisher", zap.Error(err))
+		os.Exit(1)
+	}
 
 	eventService := &postgres.EventService{
-		DB:        db,
-		Producer:  producer,
-		Validator: validate,
+		DB:                db,
+		CalendarPublisher: calendarPublisher,
+		Validator:         validate,
 	}
 
 	server := &Server{

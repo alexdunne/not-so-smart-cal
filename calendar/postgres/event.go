@@ -9,9 +9,9 @@ import (
 )
 
 type EventService struct {
-	DB        *DB
-	Producer  *rabbitmq.Producer
-	Validator *validator.Validate
+	DB                *DB
+	CalendarPublisher *rabbitmq.CalendarPublisher
+	Validator         *validator.Validate
 }
 
 func (s *EventService) FindEventByID(ctx context.Context, id string) (*model.Event, error) {
@@ -78,7 +78,7 @@ func (s *EventService) CreateEvent(ctx context.Context, event *model.Event) erro
 		return err
 	}
 
-	s.Producer.Publish("event.created", event)
+	s.CalendarPublisher.Publish("event.created", event)
 
 	return nil
 }

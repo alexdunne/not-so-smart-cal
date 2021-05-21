@@ -2,60 +2,79 @@ package rabbitmq
 
 import (
 	"encoding/json"
-	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+	"go.uber.org/zap"
 )
 
-type Producer struct {
-	// Rabbitmq DSN
-	connStr string
-
-	conn    *amqp.Connection
-	channel *amqp.Channel
+type CalendarPublisher struct {
+	conn         *amqp.Connection
+	channel      *amqp.Channel
+	exchangeName string
+	logger       *zap.Logger
 }
 
-func NewProducer(connStr string) *Producer {
-	return &Producer{
-		connStr: connStr,
+func NewCalendarPublisher(
+	conn *amqp.Connection,
+	exchangeName string,
+	logger *zap.Logger,
+) (*CalendarPublisher, error) {
+	amqpChan, err := conn.Channel()
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating channel")
 	}
+
+	return &CalendarPublisher{
+		conn:         conn,
+		channel:      amqpChan,
+		exchangeName: exchangeName,
+		logger:       logger,
+	}, nil
 }
 
-func (p *Producer) Open() (err error) {
-	// ensure a DSN is set before attempting to connect.
-	if p.connStr == "" {
-		return fmt.Errorf("connection string required")
-	}
+func (p *CalendarPublisher) Setup() error {
+	p.logger.Info("configuring exchange")
 
-	if p.conn, err = amqp.Dial(p.connStr); err != nil {
-		return err
-	}
-
-	if p.channel, err = p.conn.Channel(); err != nil {
-		return err
+	err := p.channel.ExchangeDeclare(p.exchangeName, "topic", true, false, false, false, nil)
+	if err != nil {
+		return errors.Wrap(err, "error creating the exchange")
 	}
 
 	return nil
 }
 
-func (p *Producer) Close() {
-	p.conn.Close()
-	p.channel.Close()
+func (p *CalendarPublisher) Close() error {
+	if err := p.channel.Close(); err != nil {
+		return errors.Wrap(err, "error closing the publisher channel")
+	}
+
+	if err := p.conn.Close(); err != nil {
+		return errors.Wrap(err, "error closing the publisher connection")
+	}
+
+	return nil
 }
 
-func (p *Producer) Publish(eventName string, data interface{}) error {
+func (p *CalendarPublisher) Publish(routingKey string, data interface{}) error {
+	p.logger.Info("publishing message", zap.String("exchange", p.exchangeName), zap.String("routing key", routingKey))
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
 	return p.channel.Publish(
-		"calendar",
-		eventName,
+		p.exchangeName,
+		routingKey,
 		false,
 		false,
 		amqp.Publishing{
 			ContentType: "application/json",
+			MessageId:   uuid.New().String(),
+			Timestamp:   time.Now(),
 			Body:        []byte(jsonData),
 		})
 }
