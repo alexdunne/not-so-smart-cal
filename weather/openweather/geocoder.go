@@ -116,7 +116,8 @@ func (c *Cache) Set(ctx context.Context, key string, value *weather.GeocodedLoca
 		return err
 	}
 
-	if err := c.redisClient.Set(ctx, c.key(key), string(val), 1*time.Hour).Err(); err != nil {
+	weekInHours := 168 * time.Hour
+	if err := c.redisClient.Set(ctx, c.key(key), string(val), weekInHours).Err(); err != nil {
 		return err
 	}
 
