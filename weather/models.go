@@ -1,5 +1,11 @@
 package weather
 
+type Event struct {
+	ID               string            `json:"id"`
+	GeocodedLocation *GeocodedLocation `json:"geocodedLocation"`
+	WeatherSummary   *WeatherSummary   `json:"weatherSummary"`
+}
+
 type GeocodedLocation struct {
 	Name      string
 	Latitude  string

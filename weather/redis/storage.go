@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/alexdunne/not-so-smart-cal/weather"
 	"github.com/go-redis/redis/v8"
@@ -13,20 +12,20 @@ import (
 
 var ErrNotFound = errors.New("no results found")
 
-type EventWeatherStorage struct {
+type Storage struct {
 	redisClient *redis.Client
-	keyPrefix   string
+	storageKey  string
 }
 
-func NewEventWeatherStorage(client *redis.Client) *EventWeatherStorage {
-	return &EventWeatherStorage{
+func NewStorage(client *redis.Client) *Storage {
+	return &Storage{
 		redisClient: client,
-		keyPrefix:   "event",
+		storageKey:  "events",
 	}
 }
 
-func (s *EventWeatherStorage) Get(ctx context.Context, key string) (*weather.WeatherSummary, error) {
-	val, err := s.redisClient.Get(ctx, s.key(key)).Result()
+func (s *Storage) Get(ctx context.Context, key string) (*weather.Event, error) {
+	val, err := s.redisClient.HGet(ctx, s.storageKey, key).Result()
 
 	fmt.Printf("%v", val)
 
@@ -36,7 +35,7 @@ func (s *EventWeatherStorage) Get(ctx context.Context, key string) (*weather.Wea
 		return nil, err
 	}
 
-	var result *weather.WeatherSummary
+	var result *weather.Event
 	if err := json.Unmarshal([]byte(val), &result); err != nil {
 		return nil, err
 	}
@@ -44,19 +43,15 @@ func (s *EventWeatherStorage) Get(ctx context.Context, key string) (*weather.Wea
 	return result, err
 }
 
-func (s *EventWeatherStorage) Set(ctx context.Context, key string, value *weather.WeatherSummary) error {
-	val, err := json.Marshal(value)
+func (s *Storage) Set(ctx context.Context, key string, value *weather.Event) error {
+	jsonVal, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	if err := s.redisClient.Set(ctx, s.key(key), string(val), 1*time.Hour).Err(); err != nil {
+	if err := s.redisClient.HSet(ctx, s.storageKey, key, string(jsonVal)).Err(); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *EventWeatherStorage) key(key string) string {
-	return fmt.Sprintf("%s:%s", s.keyPrefix, key)
 }

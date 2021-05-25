@@ -13,9 +13,8 @@ import (
 	"go.uber.org/zap"
 )
 
-type EventWeatherStorage interface {
-	Get(ctx context.Context, eventId string) (*weather.WeatherSummary, error)
-	Set(ctx context.Context, eventId string, value *weather.WeatherSummary) error
+type EventStorage interface {
+	Get(ctx context.Context, eventId string) (*weather.Event, error)
 }
 
 func main() {
@@ -32,14 +31,14 @@ func main() {
 	defer redisClient.Close()
 	logger.Info("opened redis connection")
 
-	eventWeatherStorage := weatherRedis.NewEventWeatherStorage(redisClient)
+	eventStorage := weatherRedis.NewStorage(redisClient)
 
 	r := gin.Default()
 
 	r.GET("/event/:eventId", func(c *gin.Context) {
 		eventId := c.Param("eventId")
 
-		summary, err := eventWeatherStorage.Get(c.Request.Context(), eventId)
+		event, err := eventStorage.Get(c.Request.Context(), eventId)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{})
@@ -48,7 +47,7 @@ func main() {
 
 		c.JSON(200, gin.H{
 			"data": gin.H{
-				"weather": summary,
+				"weather": event.WeatherSummary,
 			},
 		})
 	})

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/alexdunne/not-so-smart-cal/weather"
 	"github.com/go-redis/redis/v8"
@@ -21,7 +20,7 @@ type GeocodeService struct {
 
 func NewGeocodeService(redisClient *redis.Client, logger *zap.Logger, openWeatherAPIKey string) *GeocodeService {
 	return &GeocodeService{
-		storage:           &Cache{redisClient: redisClient, keyPrefix: "geocode"},
+		storage:           &Cache{redisClient: redisClient, storageKey: "geocoded_locations"},
 		logger:            logger,
 		openWeatherAPIKey: openWeatherAPIKey,
 	}
@@ -90,11 +89,11 @@ var ErrNotFound = errors.New("no results found")
 // todo - use a LRU with a capacity instead
 type Cache struct {
 	redisClient *redis.Client
-	keyPrefix   string
+	storageKey  string
 }
 
 func (c *Cache) Get(ctx context.Context, key string) (*weather.GeocodedLocation, error) {
-	val, err := c.redisClient.Get(ctx, c.key(key)).Result()
+	val, err := c.redisClient.HGet(ctx, c.storageKey, key).Result()
 
 	if err == redis.Nil {
 		return nil, ErrNotFound
@@ -111,19 +110,14 @@ func (c *Cache) Get(ctx context.Context, key string) (*weather.GeocodedLocation,
 }
 
 func (c *Cache) Set(ctx context.Context, key string, value *weather.GeocodedLocation) error {
-	val, err := json.Marshal(value)
+	jsonVal, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	weekInHours := 168 * time.Hour
-	if err := c.redisClient.Set(ctx, c.key(key), string(val), weekInHours).Err(); err != nil {
+	if err := c.redisClient.HSet(ctx, c.storageKey, key, string(jsonVal)).Err(); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (c *Cache) key(key string) string {
-	return fmt.Sprintf("%s:%s", c.keyPrefix, key)
 }

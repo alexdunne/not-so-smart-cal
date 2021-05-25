@@ -27,9 +27,8 @@ type WeatherService interface {
 	FetchWeather(location *weather.GeocodedLocation, timeToCheckFor time.Time) (*weather.WeatherSummary, error)
 }
 
-type EventWeatherStorage interface {
-	Get(ctx context.Context, eventId string) (*weather.WeatherSummary, error)
-	Set(ctx context.Context, eventId string, value *weather.WeatherSummary) error
+type EventStorage interface {
+	Set(ctx context.Context, eventId string, value *weather.Event) error
 }
 
 func main() {
@@ -73,13 +72,13 @@ func main() {
 
 	geocoder := openweather.NewGeocodeService(redisClient, logger, OPEN_WEATHER_API_KEY)
 	weatherService := openweather.NewWeatherService(logger, OPEN_WEATHER_API_KEY)
-	eventWeatherStorage := weatherRedis.NewEventWeatherStorage(redisClient)
+	eventStorage := weatherRedis.NewStorage(redisClient)
 
 	consumer := NewCalendarEventWeatherConsumer(
 		amqpConn,
 		geocoder,
 		weatherService,
-		eventWeatherStorage,
+		eventStorage,
 		logger,
 	)
 
@@ -97,26 +96,26 @@ func main() {
 }
 
 type CalendarEventWeatherConsumer struct {
-	conn                *amqp.Connection
-	geocoder            GeocodeService
-	weatherService      WeatherService
-	eventWeatherStorage EventWeatherStorage
-	logger              *zap.Logger
+	conn           *amqp.Connection
+	geocoder       GeocodeService
+	weatherService WeatherService
+	eventStorage   EventStorage
+	logger         *zap.Logger
 }
 
 func NewCalendarEventWeatherConsumer(
 	conn *amqp.Connection,
 	geocoder GeocodeService,
 	weatherService WeatherService,
-	eventWeatherStorage EventWeatherStorage,
+	eventStorage EventStorage,
 	logger *zap.Logger,
 ) *CalendarEventWeatherConsumer {
 	return &CalendarEventWeatherConsumer{
-		conn:                conn,
-		geocoder:            geocoder,
-		weatherService:      weatherService,
-		eventWeatherStorage: eventWeatherStorage,
-		logger:              logger,
+		conn:           conn,
+		geocoder:       geocoder,
+		weatherService: weatherService,
+		eventStorage:   eventStorage,
+		logger:         logger,
 	}
 }
 
@@ -176,13 +175,19 @@ func (c *CalendarEventWeatherConsumer) createChannel(
 	return ch, nil
 }
 
+type IncomingEvent struct {
+	ID       string    `json:"id"`
+	Location string    `json:"location"`
+	StartsAt time.Time `json:"startsAt"`
+}
+
 func (c *CalendarEventWeatherConsumer) worker(messages <-chan amqp.Delivery) {
 	for delivery := range messages {
 		ctx := context.Background()
 
 		c.logger.Info("received a message")
 
-		var event Event
+		var event IncomingEvent
 		err := json.Unmarshal(delivery.Body, &event)
 
 		if err != nil {
@@ -210,21 +215,20 @@ func (c *CalendarEventWeatherConsumer) worker(messages <-chan amqp.Delivery) {
 			zap.String("lon", location.Longitude),
 		)
 
-		weather, err := c.weatherService.FetchWeather(location, event.StartsAt)
+		weatherResponse, err := c.weatherService.FetchWeather(location, event.StartsAt)
 		if err != nil {
 			c.logger.Error("error whilst fetching weather data", zap.Error(err))
 			continue
 		}
 
-		c.logger.Info("weather fetched for event", zap.String("eventId", event.ID), zap.Any("weather", weather))
+		c.logger.Info("weather fetched for event", zap.String("eventId", event.ID), zap.Any("weather", weatherResponse))
 
 		c.logger.Info("caching event weather", zap.String("eventId", event.ID))
-		c.eventWeatherStorage.Set(ctx, event.ID, weather)
-	}
-}
 
-type Event struct {
-	ID       string    `json:"id"`
-	Location string    `json:"location"`
-	StartsAt time.Time `json:"startsAt"`
+		c.eventStorage.Set(ctx, event.ID, &weather.Event{
+			ID:               event.ID,
+			GeocodedLocation: location,
+			WeatherSummary:   weatherResponse,
+		})
+	}
 }
