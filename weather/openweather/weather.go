@@ -49,11 +49,6 @@ func (ws *WeatherService) fetchWeatherFromHourlyForecast(
 	location *weather.GeocodedLocation,
 	timeToCheckFor time.Time,
 ) (*weather.WeatherSummary, error) {
-	timeToCheckForTruncatedToHour := time.Date(
-		timeToCheckFor.Year(), timeToCheckFor.Month(), timeToCheckFor.Day(),
-		timeToCheckFor.Hour(), 0, 0, 0, timeToCheckFor.Location(),
-	)
-
 	result, err := ws.fetchWeatherForLocation(location)
 	if err != nil {
 		return nil, err
@@ -61,7 +56,7 @@ func (ws *WeatherService) fetchWeatherFromHourlyForecast(
 
 	// now find the weather for the relevant hour
 	for _, item := range result.Hourly {
-		if int64(item.Dt) == timeToCheckForTruncatedToHour.Unix() {
+		if int64(item.Dt) >= timeToCheckFor.Unix() {
 			weatherInfo := item.Weather[0]
 
 			return &weather.WeatherSummary{
@@ -72,17 +67,13 @@ func (ws *WeatherService) fetchWeatherFromHourlyForecast(
 		}
 	}
 
-	return nil, fmt.Errorf("hour matching %d was not found", timeToCheckForTruncatedToHour.Unix())
+	return nil, fmt.Errorf("weather for time after %d was not found", timeToCheckFor.Unix())
 }
 
 func (ws *WeatherService) fetchWeatherFromDailyForecast(
 	location *weather.GeocodedLocation,
 	timeToCheckFor time.Time,
 ) (*weather.WeatherSummary, error) {
-	timeToCheckForMidday := time.Date(
-		timeToCheckFor.Year(), timeToCheckFor.Month(), timeToCheckFor.Day(),
-		12, 0, 0, 0, timeToCheckFor.Location(),
-	)
 
 	result, err := ws.fetchWeatherForLocation(location)
 	if err != nil {
@@ -91,7 +82,7 @@ func (ws *WeatherService) fetchWeatherFromDailyForecast(
 
 	// now find the weather for the relevant day
 	for _, item := range result.Daily {
-		if int64(item.Dt) == timeToCheckForMidday.Unix() {
+		if int64(item.Dt) >= timeToCheckFor.Unix() {
 			weatherInfo := item.Weather[0]
 
 			var temp float64
@@ -114,7 +105,7 @@ func (ws *WeatherService) fetchWeatherFromDailyForecast(
 		}
 	}
 
-	return nil, fmt.Errorf("day matching %d was not found", timeToCheckForMidday.Unix())
+	return nil, fmt.Errorf("weather for time after %d was not found", timeToCheckFor.Unix())
 }
 
 func (ws *WeatherService) fetchWeatherForLocation(

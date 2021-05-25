@@ -218,9 +218,8 @@ func (c *CalendarEventWeatherConsumer) worker(messages <-chan amqp.Delivery) {
 
 		c.logger.Info("weather fetched for event", zap.String("eventId", event.ID), zap.Any("weather", weather))
 
-		c.logger.Info("storing event weather", zap.String("eventId", event.ID))
+		c.logger.Info("caching event weather", zap.String("eventId", event.ID))
 		c.eventWeatherStorage.Set(ctx, event.ID, weather)
-		c.logger.Info("stored event weather", zap.String("eventId", event.ID))
 	}
 }
 
