@@ -1,35 +1,8 @@
 import axios from "axios";
-import { objectType, queryField, asNexusMethod, nonNull, stringArg, inputObjectType } from "nexus";
+import { objectType, queryField, asNexusMethod, nonNull, stringArg, inputObjectType, list } from "nexus";
 import { DateTimeResolver } from "graphql-scalars";
 
 export const DateTime = DateTimeResolver;
-
-export const CalendarServiceDiagnosticsType = objectType({
-  name: "CalendarServiceDiagnostics",
-  definition(t) {
-    t.string("version");
-  },
-});
-
-export const DiagnosticsType = objectType({
-  name: "Diagnostics",
-  definition(t) {
-    t.field("calendar", {
-      type: CalendarServiceDiagnosticsType,
-    });
-  },
-});
-
-export const DiagnosticsQuery = queryField("diagnostics", {
-  type: DiagnosticsType,
-  async resolve() {
-    const response = await axios.get(`${process.env.CALENDAR_SERVICE}`);
-
-    return {
-      calendar: response.data,
-    };
-  },
-});
 
 export const EventWeatherType = objectType({
   name: "EventWeather",
@@ -64,6 +37,33 @@ export const EventType = objectType({
         }
       },
     });
+  },
+});
+
+export const EventsInputType = inputObjectType({
+  name: "EventsInput",
+  definition(t) {
+    t.nonNull.field("startsAt", {
+      type: DateTime,
+    });
+    t.nonNull.field("endsAt", {
+      type: DateTime,
+    });
+  },
+});
+
+export const EventsQuery = queryField("events", {
+  type: list("Event"),
+  args: {
+    input: nonNull(EventsInputType),
+  },
+  async resolve(_, args, ctx) {
+    const eventResponse = await ctx.calendarServiceClient.listEvents({
+      startsAt: args.input.startsAt,
+      endsAt: args.input.endsAt,
+    });
+
+    return eventResponse.data.data.events;
   },
 });
 

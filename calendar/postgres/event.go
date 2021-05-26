@@ -2,16 +2,65 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/alexdunne/not-so-smart-cal/calendar/model"
 	"github.com/alexdunne/not-so-smart-cal/calendar/rabbitmq"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 )
 
 type EventService struct {
 	DB                *DB
 	CalendarPublisher *rabbitmq.CalendarPublisher
 	Validator         *validator.Validate
+	Logger            *zap.Logger
+}
+
+func (s *EventService) FindInTimeRange(ctx context.Context, startsAt, endsAt time.Time) ([]*model.Event, error) {
+	s.Logger.Info(
+		"Finding events in time range",
+		zap.String("startsAt", startsAt.Format(time.RFC3339)),
+		zap.String("endsAt", endsAt.Format(time.RFC3339)),
+	)
+
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	rows, err := tx.Query(ctx, `
+		SELECT id, title, location, starts_at, ends_at, created_at 
+		FROM events
+		WHERE ends_at >= $1 AND starts_at <= $2
+	`, startsAt.Format(time.RFC3339), endsAt.Format(time.RFC3339))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	events := make([]*model.Event, 0)
+	for rows.Next() {
+		var event model.Event
+		if err := rows.Scan(
+			&event.ID,
+			&event.Title,
+			&event.Location,
+			&event.StartsAt,
+			&event.EndsAt,
+			&event.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		events = append(events, &event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
 }
 
 func (s *EventService) FindEventByID(ctx context.Context, id string) (*model.Event, error) {

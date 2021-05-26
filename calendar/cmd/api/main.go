@@ -79,14 +79,17 @@ func main() {
 		DB:                db,
 		CalendarPublisher: calendarPublisher,
 		Validator:         validate,
+		Logger:            logger,
 	}
 
 	server := &Server{
+		logger:       logger,
 		eventService: eventService,
 	}
 
 	r := gin.Default()
 
+	r.GET("/event", server.listEvents)
 	r.GET("/event/:eventId", server.findEvent)
 	r.POST("/event", server.createEvent)
 
@@ -94,7 +97,34 @@ func main() {
 }
 
 type Server struct {
+	logger       *zap.Logger
 	eventService *postgres.EventService
+}
+
+type ListEventsInput struct {
+	StartsAt time.Time `form:"startsAt"`
+	EndsAt   time.Time `form:"endsAt"`
+}
+
+func (s *Server) listEvents(c *gin.Context) {
+	var input ListEventsInput
+	if err := c.ShouldBindQuery(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	s.logger.Info("listing events", zap.Time("startsAt", input.StartsAt), zap.Time("endsAt", input.EndsAt))
+	events, err := s.eventService.FindInTimeRange(c.Request.Context(), input.StartsAt, input.EndsAt)
+	s.logger.Info("found events", zap.Int("eventCount", len(events)))
+
+	if err != nil {
+		ErrorResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": gin.H{
+		"events": events,
+	}})
 }
 
 func (s *Server) findEvent(c *gin.Context) {
