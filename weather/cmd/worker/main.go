@@ -227,6 +227,7 @@ func (c *CalendarEventWeatherConsumer) worker(messages <-chan amqp.Delivery) {
 
 		c.eventStorage.Set(ctx, event.ID, &weather.Event{
 			ID:               event.ID,
+			StartsAt:         event.StartsAt,
 			GeocodedLocation: location,
 			WeatherSummary:   weatherResponse,
 		})

@@ -1,7 +1,10 @@
 package weather
 
+import "time"
+
 type Event struct {
 	ID               string            `json:"id"`
+	StartsAt         time.Time         `json:"startsAt"`
 	GeocodedLocation *GeocodedLocation `json:"geocodedLocation"`
 	WeatherSummary   *WeatherSummary   `json:"weatherSummary"`
 }

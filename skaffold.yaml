@@ -30,6 +30,12 @@ build:
         dockerfile: Dockerfile
         buildArgs:
           APP: api
+    - image: weather-background-refresh
+      context: weather
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          APP: background-refresh
     - image: weather-worker
       context: weather
       docker:

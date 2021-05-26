@@ -1,0 +1,31 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: weather-background-refresh
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: weather-background-refresh
+              image: weather-background-refresh
+              env:
+                - name: REDIS_HOST
+                  value: minikube-host
+                - name: REDIS_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: credentials
+                      key: REDIS_PORT
+                - name: OPEN_WEATHER_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: credentials
+                      key: OPEN_WEATHER_API_KEY
+              command:
+                - ./app
+                # 7 days
+                - -minutes=10080
+          restartPolicy: OnFailure
